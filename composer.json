@@ -1,0 +1,14 @@
+{
+    "name": "sfog/yii2-sfog-image",
+    "type": "yii2-extension",
+    "license": "MIT",
+    "minimum-stability": "stable",
+    "require": {
+        "yiisoft/yii2": "~2.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "sfog\\image\\": "src"
+        }
+    }
+}

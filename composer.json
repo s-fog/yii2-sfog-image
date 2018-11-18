@@ -1,9 +1,8 @@
 {
-    "name": "sfog/yii2-sfog-image",
+    "name": "s-fog/yii2-sfog-image",
     "type": "yii2-extension",
     "license": "MIT",
-    "minimum-stability": "dev",
-    "prefer-stable": true,  
+    "minimum-stability": "stable",
     "require": {
         "yiisoft/yii2": "~2.0.0"
     },

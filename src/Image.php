@@ -146,7 +146,7 @@ class Image
         if ($watermark) {
             $this->generateWatermark($filename[0], $filename[1], $thumbCut);
         } else {
-            $thumbPath = $this->thumbsPath.$filename[0].'-'.$thumbCut[0].'-'.$thumbCut[1].'.'.$filename[1];
+            $thumbPath = $this->thumbsPath.'/'.$filename[0].'-'.$thumbCut[0].'-'.$thumbCut[1].'.'.$filename[1];
 
             YiiImage::thumbnail($this->rootPath.$image, $thumbCut[0], $thumbCut[1])
                 ->save($thumbPath, ['quality' => 80]);

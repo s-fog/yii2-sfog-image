@@ -23,7 +23,16 @@ class Image
         $this->thumbsPath = Yii::getAlias('@thumbsPath');
         $this->rootPath = Yii::getAlias('@www');
         $this->optimizeFilePath = Yii::getAlias('@www').'/optimize.txt';
-        $this->ourHost = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'];
+
+        $scheme = 'http';
+
+        if (!empty($_SERVER['REQUEST_SCHEME'])) {
+            $scheme = $_SERVER['REQUEST_SCHEME'];
+        } else if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+            $scheme = $_SERVER['HTTP_X_FORWARDED_PROTO'];
+        }
+
+        $this->ourHost = $scheme.'://'.$_SERVER['HTTP_HOST'];
         $this->optimizeOn = $optimizeOn;
         $this->quality = $quality;
     }

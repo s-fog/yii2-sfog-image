@@ -294,7 +294,7 @@ class Image
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HEADER, false);
             curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "gyt=1&domain={$this->ourHost}");
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "gyt=1&domain={$this->ourHost}&quality={$this->quality}");
             curl_exec($ch);
 
             unlink($this->optimizeFilePath);

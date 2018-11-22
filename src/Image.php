@@ -15,13 +15,17 @@ class Image
     public $optimizeDomain = 'http://image.sfog.website';
     public $optimizeFilePath;
     public $ourHost;
+    public $optimizeOn;
+    public $quality;
 
-    public function __construct() {
+    public function __construct($optimizeOn, $quality) {
         $this->uploadsPath = Yii::getAlias('@uploadPath');
         $this->thumbsPath = Yii::getAlias('@thumbsPath');
         $this->rootPath = Yii::getAlias('@www');
         $this->optimizeFilePath = Yii::getAlias('@www').'/optimize.txt';
         $this->ourHost = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'];
+        $this->optimizeOn = $optimizeOn;
+        $this->quality = $quality;
     }
 
     /*
@@ -107,29 +111,32 @@ class Image
      * $type -> $_FILES[$className]['tmp_name'][$attributeFile]
      */
     public function createSourceImage($file, $filename, $type, $tmp_name) {
-        if ($type == 'image/jpeg' || $type == 'image/jpg') {
-            try {
-                $image = imagecreatefromjpeg($tmp_name);
-                $flag = imagejpeg ($image, $this->rootPath.$filename, 75);
-                imagedestroy($image);
-            } catch (Exception $ex) {
-                $flag = $file->saveAs($this->rootPath.$filename, false);
-            }
-        } else if ($type == 'image/png') {
-            try {
-                $image = imagecreatefrompng($tmp_name);
-                imagealphablending($image, false);
-                imagesavealpha($image, true);
-                $flag = imagepng($image, $this->rootPath.$filename, 9);
-                imagedestroy($image);
-            } catch (Exception $ex) {
-                $flag = $file->saveAs($this->rootPath.$filename, false);
-            }
-        } else {
+        if ($this->optimizeOn) {
             $flag = $file->saveAs($this->rootPath.$filename, false);
+            $this->optimizeImages([$filename]);
+        } else {
+            if ($type == 'image/jpeg' || $type == 'image/jpg') {
+                try {
+                    $image = imagecreatefromjpeg($tmp_name);
+                    $flag = imagejpeg ($image, $this->rootPath.$filename, 75);
+                    imagedestroy($image);
+                } catch (Exception $ex) {
+                    $flag = $file->saveAs($this->rootPath.$filename, false);
+                }
+            } else if ($type == 'image/png') {
+                try {
+                    $image = imagecreatefrompng($tmp_name);
+                    imagealphablending($image, false);
+                    imagesavealpha($image, true);
+                    $flag = imagepng($image, $this->rootPath.$filename, 9);
+                    imagedestroy($image);
+                } catch (Exception $ex) {
+                    $flag = $file->saveAs($this->rootPath.$filename, false);
+                }
+            } else {
+                $flag = $file->saveAs($this->rootPath.$filename, false);
+            }
         }
-
-        $this->optimizeImages([$filename]);
 
         return $flag;
     }
@@ -149,9 +156,9 @@ class Image
             $thumbPath = $this->thumbsPath.'/'.$filename[0].'-'.$thumbCut[0].'-'.$thumbCut[1].'.'.$filename[1];
 
             YiiImage::thumbnail($this->rootPath.$image, $thumbCut[0], $thumbCut[1])
-                ->save($thumbPath, ['quality' => 80]);
+                ->save($thumbPath, ['quality' => $this->quality]);
 
-            $this->optimizeImages([$thumbPath]);
+            if ($this->optimizeOn) $this->optimizeImages([$thumbPath]);
         }
     }
 
@@ -188,16 +195,16 @@ class Image
      * fullImageName - {$filename}.{$file_ext}
      * $thumbCut -> array(0 => {width}, 1 => {height})
      */
-    public function generateWatermark($file_name, $file_ext, $thumbCut, $quality = 80) {
+    public function generateWatermark($file_name, $file_ext, $thumbCut) {
         $thumbPath = $this->thumbsPath.$file_name.'-'.$thumbCut[0].'-'.$thumbCut[1].'.'.$file_ext;
         YiiImage::thumbnail($this->uploadsPath.$file_name.'.'.$file_ext, $thumbCut[0], $thumbCut[1])
-            ->save($thumbPath, ['quality' => $quality]);
+            ->save($thumbPath, ['quality' => $this->quality]);
 
         $watermarkImage = $this->thumbsPath.$file_name.'-'.$thumbCut[0].'-'.$thumbCut[1].'-watermark.'.$file_ext;
         YiiImage::watermark($thumbPath, $this->rootPath.'/img/watermark-'.$thumbCut[0].'-'.$thumbCut[1].'.png')
-            ->save($watermarkImage, ['quality' => $quality]);
+            ->save($watermarkImage, ['quality' => $this->quality]);
 
-        $this->optimizeImages([$watermarkImage]);
+        if ($this->optimizeOn) $this->optimizeImages([$watermarkImage]);
         unlink($thumbPath);
     }
 
@@ -251,8 +258,7 @@ class Image
             }
 
             $this->deleteOldImages($model, $attribute);
-            $images = [$filename];
-            $this->optimizeImages($images);
+            if ($this->optimizeOn) $this->optimizeImages([$filename]);
 
             return $filename;
         } else {
@@ -280,6 +286,7 @@ class Image
                 file_put_contents($this->optimizeFilePath, "/{$basename}||", FILE_APPEND | LOCK_EX);
                 $imagesChange[] = "{$this->rootPath}/{$basename}";
             }
+
         }
 
         if (file_exists($this->optimizeFilePath)) {

@@ -18,7 +18,7 @@ class Image
     public $optimizeOn;
     public $quality;
 
-    public function __construct($optimizeOn, $quality) {
+    public function __construct($optimizeOn = true, $quality = 85) {
         $this->uploadsPath = Yii::getAlias('@uploadPath');
         $this->thumbsPath = Yii::getAlias('@thumbsPath');
         $this->rootPath = Yii::getAlias('@www');
@@ -113,6 +113,41 @@ class Image
         }
     }
 
+    public function uploadFileDirty($model, $attribute, $attributeFile, $instance = false, $thumbs = array(), $watermark = false) {
+        if (!$instance) {
+            $instance = UploadedFile::getInstance($model, $attributeFile);
+        }
+
+        $className = $this->getClearClassname($model->className());
+
+        if ($instance) {
+            $name = $this->generateName($instance);
+            $extention = $instance->extension;
+            $filename = '/uploads/'.$name.'.'.$extention;
+            $flag = $this->createSourceImage($instance, $filename, $instance->type, $instance->tempName);
+
+
+            if ($flag) {
+                $result = $filename;
+
+                foreach($thumbs as $thumb) {
+                    $this->doThumb($filename, $thumb, $watermark);
+                }
+            } else {
+                $result = false;
+            }
+        } else {
+            $result = false;
+        }
+
+        if ($result) {
+            $this->deleteOldImages($model, $attribute);
+            return $result;
+        } else {
+            return $model->$attribute;
+        }
+    }
+
     /*
      * $file -> UploadedFile instance
      * $filename -> /uploads/{filename}.{extension}
@@ -150,6 +185,39 @@ class Image
         return $flag;
     }
 
+
+    public function createImagesFromExistingImage($filename, $thumbs = []) {
+        $path_parts = pathinfo($filename);
+        $new_filename = '/uploads/'.md5($filename.uniqid('', true)).'.'.strtolower($path_parts['extension']);
+
+        if (in_array($path_parts['extension'], ['JPG','JPEG','jpg','jpeg'])) {
+            try {
+                $image = imagecreatefromjpeg($filename);
+                $flag = imagejpeg($image, Yii::getAlias('@www').$new_filename, 95);
+                imagedestroy($image);
+            } catch (Exception $ex) {
+                copy($filename, Yii::getAlias('@www').$new_filename);
+            }
+        } else if (in_array($path_parts['extension'], ['png','PNG'])) {
+            try {
+                $image = imagecreatefrompng($filename);
+                imagealphablending($image, false);
+                imagesavealpha($image, true);
+                $flag = imagepng($image, Yii::getAlias('@www').$new_filename, 9);
+                imagedestroy($image);
+            } catch (Exception $ex) {
+                copy($filename, Yii::getAlias('@www').$new_filename);
+            }
+        } else {
+            copy($filename, Yii::getAlias('@www').$new_filename);
+        }
+
+        foreach($thumbs as $thumb) {
+            $this->doThumb($new_filename, $thumb);
+        }
+
+        return $new_filename;
+    }
     /*
      * $image -> /uploads/{filename}.{extension}
      * $thumb -> ['{width}x{height}']

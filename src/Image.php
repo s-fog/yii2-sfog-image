@@ -69,7 +69,7 @@ class Image
 
         if (!empty($_FILES[$className]['name'][$attributeFile])) {
             if ($result) {
-                $this->deleteOldImages($model, $attribute);
+                //$this->deleteOldImages($model, $attribute);
                 return $result;
             }
         } else {
@@ -105,7 +105,7 @@ class Image
 
         if (!empty($_FILES[$className]['name'][$index][$attributeFileOrigin])) {
             if ($result) {
-                $this->deleteOldImages($model, $attributeOrigin);
+                //$this->deleteOldImages($model, $attributeOrigin);
                 return $result;
             }
         } else {
@@ -141,7 +141,7 @@ class Image
         }
 
         if ($result) {
-            $this->deleteOldImages($model, $attribute);
+            //$this->deleteOldImages($model, $attribute);
             return $result;
         } else {
             return $model->$attribute;
@@ -334,7 +334,7 @@ class Image
                 }
             }
 
-            $this->deleteOldImages($model, $attribute);
+            //$this->deleteOldImages($model, $attribute);
             if ($this->optimizeOn) $this->optimizeImages([$filename]);
 
             return $filename;
